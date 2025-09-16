@@ -1,80 +1,98 @@
-// src/pages/CreateResource.jsx
-import { useState, useContext } from "react";
-import axios from "axios";
-import AuthContext from "../context/AuthContext.js";
+import React, { useState, useContext } from "react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { PlusCircle } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function CreateResource() {
-  const { token } = useContext(AuthContext);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+  });
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleFileChange = (e) => setFile(e.target.files[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file");
+    if (!user) return toast.error("Login required");
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("category", category);
-    formData.append("file", file);
-
+    setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/resources", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+      const data = new FormData();
+      data.append("title", form.title);
+      data.append("description", form.description);
+      data.append("category", form.category);
+      if (file) data.append("file", file);
+
+      await api.post("/resources", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Resource uploaded successfully!");
-      setTitle("");
-      setDescription("");
-      setCategory("");
-      setFile(null);
+
+      toast.success("Resource created!");
+      navigate("/resources"); // redirect back to list page
     } catch (err) {
-      console.error(err);
-      alert("Failed to upload resource");
+      toast.error(err.response?.data?.message || "Upload failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-6 bg-base-200 flex justify-center">
+    <div className="max-w-md mx-auto mt-10">
+      <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
+        <PlusCircle className="w-7 h-7" /> Add Resource
+      </h2>
+
       <form
-        className="bg-white p-6 rounded shadow-md w-full max-w-md"
         onSubmit={handleSubmit}
+        className="card bg-base-200 p-6 shadow-lg space-y-4"
       >
-        <h2 className="text-xl font-bold mb-4">Upload Resource</h2>
         <input
           type="text"
+          name="title"
           placeholder="Title"
-          className="input input-bordered w-full mb-4"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Category"
-          className="input input-bordered w-full mb-4"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          value={form.title}
+          onChange={handleChange}
+          className="input input-bordered w-full"
           required
         />
         <textarea
+          name="description"
           placeholder="Description"
-          className="textarea textarea-bordered w-full mb-4"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
+          value={form.description}
+          onChange={handleChange}
+          className="textarea textarea-bordered w-full"
+        />
+        <input
+          type="text"
+          name="category"
+          placeholder="Category"
+          value={form.category}
+          onChange={handleChange}
+          className="input input-bordered w-full"
         />
         <input
           type="file"
-          className="file-input file-input-bordered w-full mb-4"
-          onChange={(e) => setFile(e.target.files[0])}
-          required
+          onChange={handleFileChange}
+          className="file-input file-input-bordered w-full"
         />
-        <button className="btn btn-primary w-full">Upload</button>
+        <button className="btn btn-primary w-full" disabled={loading}>
+          {loading ? "Uploading..." : "Create Resource"}
+        </button>
       </form>
     </div>
   );

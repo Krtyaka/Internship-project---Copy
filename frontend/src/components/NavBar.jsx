@@ -1,55 +1,58 @@
-// src/components/Navbar.jsx
-import { useContext } from "react";
-import { Link } from "react-router-dom";
-import AuthContext from "../context/AuthContext.js";
+import React, { useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import {
+  LogOut,
+  LogIn,
+  User,
+  UserPlus,
+  BookOpen,
+  FolderOpen,
+} from "lucide-react";
 
-export default function Navbar() {
+export default function NavBar() {
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
-    <nav className="bg-base-200 p-4 flex justify-between items-center shadow-md">
-      <Link to="/" className="text-xl font-bold">
-        Campus Hub
-      </Link>
-      <div className="space-x-4">
-        <Link to="/resources" className="btn btn-ghost btn-sm">
-          Resources
+    <div className="navbar bg-base-200 shadow">
+      <div className="container mx-auto flex justify-between">
+        <Link className="btn btn-ghost normal-case text-xl" to="/">
+          CampusCollab
         </Link>
-        <Link to="/projects" className="btn btn-ghost btn-sm">
-          Projects
-        </Link>
-
-        {user && (
-          <>
-            <Link to="/create-resource" className="btn btn-outline btn-sm">
-              Add Resource
-            </Link>
-            <Link to="/create-project" className="btn btn-outline btn-sm">
-              Add Project
-            </Link>
-          </>
-        )}
-
-        {user ? (
-          <>
-            <Link to="/profile" className="btn btn-outline btn-sm">
-              {user.name}
-            </Link>
-            <button className="btn btn-sm btn-primary" onClick={logout}>
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="btn btn-sm btn-primary">
-              Login
-            </Link>
-            <Link to="/signup" className="btn btn-sm btn-outline">
-              Signup
-            </Link>
-          </>
-        )}
+        <div className="flex gap-2">
+          <Link className="btn btn-ghost" to="/resources">
+            <BookOpen className="w-4 h-4 mr-1" /> Resources
+          </Link>
+          <Link className="btn btn-ghost" to="/projects">
+            <FolderOpen className="w-4 h-4 mr-1" /> Projects
+          </Link>
+          {user ? (
+            <>
+              <Link className="btn btn-ghost" to="/profile">
+                <User className="w-4 h-4 mr-1" /> {user.name}
+              </Link>
+              <button className="btn btn-outline" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-1" /> Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link className="btn btn-ghost" to="/login">
+                <LogIn className="w-4 h-4 mr-1" /> Login
+              </Link>
+              <Link className="btn btn-primary" to="/signup">
+                <UserPlus className="w-4 h-4 mr-1" /> Signup
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-    </nav>
+    </div>
   );
 }

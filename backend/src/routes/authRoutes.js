@@ -1,9 +1,11 @@
 import express from "express";
+import { getMe } from "../controllers/authController.js";
 import {
   loginValidation,
   signupValidation,
 } from "../middleware/authValidation.js";
 import { login, signUp } from "../controllers/authController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -17,10 +19,6 @@ router.get("/test", (req, res) => {
 router.post("/signup", signupValidation, signUp);
 router.post("/login", loginValidation, login);
 
-//protected route example to test JWT authentication
-router.get("/me", (req, res) => {
-  res.status(200).json({ message: "Protected route accessed!" });
-});
+router.get("/me", protect, getMe);
 
 export default router;
-

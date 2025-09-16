@@ -1,68 +1,68 @@
-// src/pages/CreateProject.jsx
-import { useState, useContext } from "react";
-import axios from "axios";
-import AuthContext from "../context/AuthContext.js";
+import React, { useState, useContext } from "react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { PlusCircle } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function CreateProject() {
-  const { token } = useContext(AuthContext);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [skills, setSkills] = useState("");
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [form, setForm] = useState({ title: "", description: "" });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return toast.error("Login required");
 
+    setLoading(true);
     try {
-      await axios.post(
-        "http://localhost:5000/api/projects",
-        {
-          title,
-          description,
-          skillsRequired: skills.split(",").map((s) => s.trim()),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Project created successfully!");
-      setTitle("");
-      setDescription("");
-      setSkills("");
+      await api.post("/projects", form);
+      toast.success("Project created!");
+      navigate("/projects");
     } catch (err) {
-      console.error(err);
-      alert("Failed to create project");
+      toast.error(err.response?.data?.message || "Failed to create project");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-6 bg-base-200 flex justify-center">
+    <div className="max-w-md mx-auto mt-10">
+      <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
+        <PlusCircle className="w-7 h-7" /> Create Project
+      </h2>
       <form
-        className="bg-white p-6 rounded shadow-md w-full max-w-md"
         onSubmit={handleSubmit}
+        className="card bg-base-200 p-6 shadow-lg space-y-4"
       >
-        <h2 className="text-xl font-bold mb-4">Create Project</h2>
         <input
           type="text"
-          placeholder="Project Title"
-          className="input input-bordered w-full mb-4"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          name="title"
+          placeholder="Title"
+          value={form.title}
+          onChange={handleChange}
+          className="input input-bordered w-full"
           required
         />
         <textarea
+          name="description"
           placeholder="Description"
-          className="textarea textarea-bordered w-full mb-4"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
+          value={form.description}
+          onChange={handleChange}
+          className="textarea textarea-bordered w-full"
         />
-        <input
-          type="text"
-          placeholder="Skills required (comma separated)"
-          className="input input-bordered w-full mb-4"
-          value={skills}
-          onChange={(e) => setSkills(e.target.value)}
-          required
-        />
-        <button className="btn btn-primary w-full">Create Project</button>
+        <button
+          type="submit"
+          className="btn btn-primary w-full"
+          disabled={loading}
+        >
+          {loading ? "Creating..." : "Create Project"}
+        </button>
       </form>
     </div>
   );

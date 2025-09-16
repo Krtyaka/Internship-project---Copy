@@ -1,64 +1,104 @@
-// src/pages/Signup.jsx
-import { useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthContext from "../context/AuthContext.js";
-import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+import { UserPlus } from "lucide-react";
 
 export default function Signup() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "student",
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/signup", {
-        name,
-        email,
-        password,
-      });
-      login(res.data.user, res.data.token);
-      navigate("/dashboard");
+      const res = await api.post("/auth/signup", form);
+
+      // Assuming backend returns { token, user }
+      login(res.data.token, res.data.user);
+
+      toast.success("Account created successfully!");
+      navigate("/resources");
     } catch (err) {
-      alert("Signup failed. Try again.");
-      console.error(err);
+      const msg = err.response?.data?.message || "Signup failed";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-base-200">
+    <div className="max-w-md mx-auto mt-10">
+      <h2 className="text-3xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+        <UserPlus className="w-7 h-7" /> Create Account
+      </h2>
+
       <form
-        className="bg-white p-8 rounded shadow-md w-full max-w-sm"
         onSubmit={handleSubmit}
+        className="card bg-base-200 p-6 shadow-lg space-y-4"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
         <input
           type="text"
-          placeholder="Name"
-          className="input input-bordered w-full mb-4"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          name="name"
+          placeholder="Full Name"
+          value={form.name}
+          onChange={handleChange}
+          className="input input-bordered w-full"
           required
         />
         <input
           type="email"
+          name="email"
           placeholder="Email"
-          className="input input-bordered w-full mb-4"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={form.email}
+          onChange={handleChange}
+          className="input input-bordered w-full"
           required
         />
         <input
           type="password"
+          name="password"
           placeholder="Password"
-          className="input input-bordered w-full mb-4"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={form.password}
+          onChange={handleChange}
+          className="input input-bordered w-full"
           required
         />
-        <button className="btn btn-primary w-full">Sign Up</button>
+        <select
+          name="role"
+          value={form.role}
+          onChange={handleChange}
+          className="select select-bordered w-full"
+        >
+          <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+        </select>
+
+        <button
+          type="submit"
+          className="btn btn-primary w-full"
+          disabled={loading}
+        >
+          {loading ? "Creating..." : "Sign Up"}
+        </button>
       </form>
     </div>
   );

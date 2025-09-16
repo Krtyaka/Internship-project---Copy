@@ -1,38 +1,128 @@
-// src/pages/Projects.jsx
-import { useEffect, useState, useContext } from "react";
-import axios from "axios";
-import ProjectCard from "../components/ProjectCard.jsx";
-import AuthContext from "../context/AuthContext.js";
+import React, { useEffect, useState, useContext } from "react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+import { AuthContext } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+import { PlusCircle, Users, Trash2 } from "lucide-react";
 
 export default function Projects() {
+  const { user } = useContext(AuthContext);
   const [projects, setProjects] = useState([]);
-  const { token } = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/projects");
+      setProjects(res.data);
+    } catch (err) {
+      toast.error("Failed to load projects");
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/projects", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProjects(res.data);
-      } catch (err) {
-        console.error(err);
-        alert("Failed to load projects");
-      }
-    };
     fetchProjects();
-  }, [token]);
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!user) return toast.error("Login required");
+    if (!confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await api.delete(`/projects/${id}`);
+      toast.success("Project deleted");
+      setProjects((prev) => prev.filter((p) => p._id !== id));
+    } catch {
+      toast.error("Failed to delete");
+    }
+  };
+
+  const myProjects = user
+    ? projects.filter((p) =>
+        typeof p.createdBy === "object"
+          ? p.createdBy._id === user._id
+          : p.createdBy === user._id
+      )
+    : [];
 
   return (
-    <div className="min-h-screen p-6 bg-base-200">
-      <h1 className="text-2xl font-bold mb-4">All Projects</h1>
-      {projects.length === 0 ? (
-        <p>No projects available.</p>
+    <div className="max-w-3xl mx-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-3xl font-bold">Projects</h2>
+        {user && (
+          <Link to="/projects/create" className="btn btn-primary">
+            <PlusCircle className="w-4 h-4 mr-1" /> New Project
+          </Link>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center p-6">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      ) : projects.length === 0 ? (
+        <p className="text-center opacity-70">No projects yet</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((proj) => (
-            <ProjectCard key={proj._id} project={proj} />
+        <div className="space-y-4">
+          {projects.map((p) => (
+            <div
+              key={p._id}
+              className="card bg-base-200 p-4 shadow flex justify-between"
+            >
+              <div>
+                <h3 className="text-lg font-bold">{p.title}</h3>
+                <p className="text-sm">{p.description}</p>
+                <p className="text-xs opacity-70">
+                  Created by:{" "}
+                  {typeof p.createdBy === "object"
+                    ? p.createdBy.name
+                    : "Unknown"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  to={`/projects/${p._id}`}
+                  className="btn btn-outline btn-sm"
+                >
+                  <Users className="w-4 h-4" /> View
+                </Link>
+                {user &&
+                  (p.createdBy._id === user._id ||
+                    p.createdBy === user._id) && (
+                    <button
+                      className="btn btn-error btn-sm"
+                      onClick={() => handleDelete(p._id)}
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  )}
+              </div>
+            </div>
           ))}
+        </div>
+      )}
+
+      {user && myProjects.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-bold mb-2">My Projects</h3>
+          <div className="space-y-3">
+            {myProjects.map((p) => (
+              <div
+                key={p._id}
+                className="card bg-base-300 p-3 shadow flex justify-between"
+              >
+                <span>{p.title}</span>
+                <button
+                  className="btn btn-error btn-xs"
+                  onClick={() => handleDelete(p._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

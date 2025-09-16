@@ -1,35 +1,41 @@
-// src/context/AuthProvider.jsx
-import { useState, useEffect } from "react";
-import AuthContext from "./AuthContext.js";
+import React, { useState, useEffect } from "react";
+import api from "../api/axios";
+import { AuthContext } from "./AuthContext";
 
-export default function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (storedUser) setUser(storedUser);
-    }
-  }, [token]);
-
-  const login = (userData, jwt) => {
+  const login = (token, userData) => {
+    localStorage.setItem("token", token);
     setUser(userData);
-    setToken(jwt);
-    localStorage.setItem("token", jwt);
-    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    setUser(null);
   };
 
+  // ✅ Fetch user data on page refresh
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setLoadingAuth(true);
+      api
+        .get("/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setUser(res.data))
+        .catch(() => setUser(null))
+        .finally(() => setLoadingAuth(false));
+    } else {
+      setLoadingAuth(false);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loadingAuth }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
