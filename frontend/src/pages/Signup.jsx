@@ -14,6 +14,7 @@ export default function Signup() {
     email: "",
     password: "",
     role: "student",
+    skills: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,18 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/signup", form);
+      const skillsArray = form.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter((skill) => skill.length > 0);
+
+      // Send form data with processed skills
+      const formData = {
+        ...form,
+        skills: skillsArray,
+      };
+
+      const res = await api.post("/auth/signup", formData);
 
       // Assuming backend returns { token, user }
       login(res.data.token, res.data.user);
@@ -91,6 +103,15 @@ export default function Signup() {
           <option value="student">Student</option>
           <option value="faculty">Faculty</option>
         </select>
+
+        <input
+          type="text"
+          name="skills"
+          placeholder="Skills (comma-separated): React, MongoDB, etc."
+          value={form.skills}
+          onChange={handleChange}
+          className="input input-bordered w-full"
+        />
 
         <button
           type="submit"

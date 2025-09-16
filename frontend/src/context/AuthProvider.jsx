@@ -15,6 +15,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     setUser(null);
   };
+  const updateContributions = (change) => {
+    if (!user) return;
+
+    const updatedUser = {
+      ...user,
+      contributions: Math.max((user.contributions || 0) + change, 0),
+    };
+    const token = localStorage.getItem("token");
+    login(token, updatedUser);
+  };
 
   // ✅ Fetch user data on page refresh
   useEffect(() => {
@@ -34,7 +44,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loadingAuth }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, loadingAuth, updateContributions }}
+    >
       {children}
     </AuthContext.Provider>
   );

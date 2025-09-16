@@ -52,6 +52,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/projects/:id" element={<Projects />} />
+
           <Route
             path="/profile"
             element={

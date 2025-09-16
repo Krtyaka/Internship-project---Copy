@@ -7,7 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 
 export default function CreateResource() {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { user, updateContributions } = useContext(AuthContext);
 
   const [form, setForm] = useState({
     title: "",
@@ -42,7 +42,8 @@ export default function CreateResource() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("Resource created!");
+      toast.success("Resource uploaded successfully!");
+      updateContributions(+1);
       navigate("/resources"); // redirect back to list page
     } catch (err) {
       toast.error(err.response?.data?.message || "Upload failed");

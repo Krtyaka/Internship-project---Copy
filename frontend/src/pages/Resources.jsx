@@ -6,7 +6,7 @@ import { Trash2, ExternalLink, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Resources() {
-  const { user } = useContext(AuthContext);
+  const { user, updateContributions } = useContext(AuthContext);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +35,7 @@ export default function Resources() {
       await api.delete(`/resources/${id}`);
       toast.success("Deleted successfully");
       setResources((prev) => prev.filter((r) => r._id !== id));
+      updateContributions(-1);
     } catch (err) {
       toast.error("Delete failed");
       console.log(err);

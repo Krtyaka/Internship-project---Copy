@@ -97,18 +97,29 @@ export const getMe = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name, role, skills } = req.body;
-    const user = await User.findById(req.user._id);
+    const { name, email, skills, role } = req.body;
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        name,
+        email,
+        skills,
+        role,
+      },
+      { new: true, runValidators: true, select: "-password" }
+    );
 
-    if (name) user.name = name;
-    if (role) user.role = role.toLowerCase();
-    if (skills) user.skills = skills;
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    await user.save();
-    res.json({ message: "Profile updated", user });
+    res.json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
+    console.error("Error updating profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

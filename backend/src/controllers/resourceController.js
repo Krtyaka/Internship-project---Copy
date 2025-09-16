@@ -1,6 +1,7 @@
 import Resource from "../models/resource.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
+import User from "../models/User.js";
 
 /**
  * Helper: upload a Buffer to Cloudinary using upload_stream
@@ -44,6 +45,10 @@ export const createResource = async (req, res) => {
     });
 
     await resource.save();
+
+    // Increment user contributions
+    await User.findByIdAndUpdate(req.user._id, { $inc: { contributions: +1 } });
+
     return res.status(201).json(resource);
   } catch (error) {
     console.error("Resource create error:", error);
@@ -95,6 +100,10 @@ export const deleteResource = async (req, res) => {
     }
 
     await resource.deleteOne();
+
+    // Decrement user contributions
+    await User.findByIdAndUpdate(req.user._id, { $inc: { contributions: -1 } });
+
     res.json({ message: "Resource deleted successfully" });
   } catch (error) {
     console.error("Delete resource error:", error);

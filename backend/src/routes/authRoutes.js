@@ -6,6 +6,7 @@ import {
 } from "../middleware/authValidation.js";
 import { login, signUp } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { updateProfile } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get("/test", (req, res) => {
 
 router.post("/signup", signupValidation, signUp);
 router.post("/login", loginValidation, login);
-
 router.get("/me", protect, getMe);
+router.put("/profile", protect, updateProfile);
 
 export default router;

@@ -7,8 +7,12 @@ import { AuthContext } from "../context/AuthContext";
 
 export default function CreateProject() {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const { user, updateContributions } = useContext(AuthContext);
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    skillsRequired: "",
+  });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -21,8 +25,21 @@ export default function CreateProject() {
 
     setLoading(true);
     try {
-      await api.post("/projects", form);
+      // Process skills into array
+      const skillsArray = form.skillsRequired
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter((skill) => skill.length > 0);
+
+      // Send form data with processed skills
+      const projectData = {
+        ...form,
+        skillsRequired: skillsArray,
+      };
+
+      await api.post("/projects", projectData);
       toast.success("Project created!");
+      updateContributions(+1);
       navigate("/projects");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create project");
@@ -55,6 +72,14 @@ export default function CreateProject() {
           value={form.description}
           onChange={handleChange}
           className="textarea textarea-bordered w-full"
+        />
+        <input
+          type="text"
+          name="skillsRequired"
+          placeholder="Skills Required (comma-separated): React, MongoDB, Node.js"
+          value={form.skillsRequired}
+          onChange={handleChange}
+          className="input input-bordered w-full"
         />
         <button
           type="submit"
