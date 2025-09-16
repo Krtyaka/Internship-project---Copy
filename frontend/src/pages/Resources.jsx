@@ -17,6 +17,7 @@ export default function Resources() {
       setResources(res.data);
     } catch (err) {
       toast.error("Failed to load resources");
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -36,10 +37,20 @@ export default function Resources() {
       setResources((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       toast.error("Delete failed");
+      console.log(err);
     }
   };
 
-  // ✅ Filter current user's resources for separate section
+  // Filter resources to show only other users' resources in main section
+  const otherUsersResources = user
+    ? resources.filter(
+        (r) =>
+          !r.uploadedBy ||
+          (r.uploadedBy._id !== user._id && r.uploadedBy !== user._id)
+      )
+    : resources;
+
+  // Filter current user's resources for separate section
   const myResources = user
     ? resources.filter(
         (r) =>
@@ -61,14 +72,14 @@ export default function Resources() {
 
       {loading ? (
         <p className="text-center">Loading resources...</p>
-      ) : resources.length === 0 ? (
+      ) : otherUsersResources.length === 0 && myResources.length === 0 ? (
         <p className="text-center opacity-70">No resources available</p>
       ) : (
         <div className="space-y-4">
-          {resources.map((res) => (
+          {otherUsersResources.map((res) => (
             <div
               key={res._id}
-              className="card bg-base-200 p-4 shadow flex flex-col sm:flex-row justify-between"
+              className="card bg-base-100 p-4 shadow-lg hover:shadow-xl transition-shadow flex flex-col sm:flex-row justify-between items-start sm:items-center"
             >
               <div>
                 <h3 className="text-lg font-bold">{res.title}</h3>
@@ -95,7 +106,7 @@ export default function Resources() {
                   </a>
                 )}
 
-                {/* ✅ Compare either string or object._id */}
+                {/* Compare either string or object._id */}
                 {user &&
                   res.uploadedBy &&
                   (res.uploadedBy._id === user._id ||
@@ -115,20 +126,36 @@ export default function Resources() {
 
       {user && myResources.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xl font-bold mb-2">My Resources</h3>
-          <div className="space-y-3">
+          <h3 className="text-xl font-bold mb-4">My Resources</h3>
+          <div className="space-y-4">
             {myResources.map((res) => (
               <div
                 key={res._id}
-                className="card bg-base-300 p-3 shadow flex justify-between"
+                className="card bg-base-100 p-4 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center"
               >
-                <span>{res.title}</span>
-                <button
-                  className="btn btn-error btn-xs"
-                  onClick={() => handleDelete(res._id)}
-                >
-                  Delete
-                </button>
+                <div>
+                  <h4 className="font-semibold">{res.title}</h4>
+                  <p className="text-sm opacity-70">{res.description}</p>
+                  <p className="text-xs opacity-50">Category: {res.category}</p>
+                </div>
+                <div className="flex gap-2 mt-2 sm:mt-0">
+                  {res.fileUrl && (
+                    <a
+                      href={res.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-outline btn-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" /> View
+                    </a>
+                  )}
+                  <button
+                    className="btn btn-error btn-sm"
+                    onClick={() => handleDelete(res._id)}
+                  >
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
